@@ -1,0 +1,6 @@
+{
+  "name": "Folio — Essay Writing & Revision Studio",
+  "description": "An editorial workspace for drafting essays, creating side-by-side revisions from scratch or copies, tracking changes across iterations, and exporting to PDF or DOCX.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
