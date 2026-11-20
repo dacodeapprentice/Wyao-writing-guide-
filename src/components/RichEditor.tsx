@@ -5,6 +5,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  ChevronsUpDown,
   IndentDecrease,
   IndentIncrease,
   Italic,
@@ -36,6 +37,7 @@ interface RichEditorProps {
   author: string;
   font: EditorFont;
   compact?: boolean;
+  fluidHeightOnSmall?: boolean;
   screenLabel?: string;
   versions?: EssayVersion[];
   onSelectVersion?: (versionId: string) => void;
@@ -55,6 +57,7 @@ export const RichEditor: React.FC<RichEditorProps> = ({
   author,
   font,
   compact = false,
+  fluidHeightOnSmall = false,
   screenLabel,
   versions,
   onSelectVersion,
@@ -69,6 +72,8 @@ export const RichEditor: React.FC<RichEditorProps> = ({
   onChangeContent,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const subtitleRef = useRef<HTMLTextAreaElement>(null);
   const lastEmittedHtmlRef = useRef<string>(version.contentHtml);
   const lastVersionIdRef = useRef<string>(version.id);
 
@@ -78,6 +83,27 @@ export const RichEditor: React.FC<RichEditorProps> = ({
   const [findQuery, setFindQuery] = useState('');
   const [replaceQuery, setReplaceQuery] = useState('');
   const [findFeedback, setFindFeedback] = useState<string | null>(null);
+  const [scrollWithinWindow, setScrollWithinWindow] = useState(true);
+
+  const autoResizeTextarea = useCallback((el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, []);
+
+  useEffect(() => {
+    autoResizeTextarea(titleRef.current);
+    autoResizeTextarea(subtitleRef.current);
+  }, [version.title, version.subtitle, version.id, compact, autoResizeTextarea]);
+
+  useEffect(() => {
+    const onResize = () => {
+      autoResizeTextarea(titleRef.current);
+      autoResizeTextarea(subtitleRef.current);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [autoResizeTextarea]);
 
   // Sync innerHTML only on version switch or external replacement (import, revert hunk, copy-to-right)
   useEffect(() => {
@@ -297,10 +323,14 @@ export const RichEditor: React.FC<RichEditorProps> = ({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-zinc-100/90 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+    <div
+      className={`flex flex-col w-full min-w-0 bg-zinc-100/90 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden ${
+        fluidHeightOnSmall ? 'lg:h-full' : 'h-full'
+      }`}
+    >
       {/* Optional Screen Header Bar (used in Two-Screen Split Revision) */}
       {(screenLabel || (versions && onSelectVersion) || extraHeaderActions) && (
-        <div className="px-3.5 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="px-3 sm:px-3.5 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             {screenLabel && (
               <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
@@ -324,7 +354,7 @@ export const RichEditor: React.FC<RichEditorProps> = ({
                   id={`screen-select-${screenLabel || version.id}`}
                   value={version.id}
                   onChange={(e) => onSelectVersion(e.target.value)}
-                  className="h-9 sm:h-8 pl-2 pr-6 text-xs font-medium bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 max-w-[180px] truncate"
+                  className="h-9 sm:h-8 pl-2 pr-6 text-xs font-medium bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 max-w-[160px] sm:max-w-[180px] truncate"
                 >
                   {versions.map((v) => (
                     <option key={v.id} value={v.id}>
@@ -337,6 +367,26 @@ export const RichEditor: React.FC<RichEditorProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
+            {fluidHeightOnSmall && (
+              <button
+                type="button"
+                onClick={() => setScrollWithinWindow((prev) => !prev)}
+                aria-pressed={scrollWithinWindow}
+                title={
+                  scrollWithinWindow
+                    ? 'Scrolling inside this window (click to expand full length)'
+                    : 'Expanded full length (click to scroll inside this window)'
+                }
+                className={`lg:hidden h-9 sm:h-8 inline-flex items-center gap-1 px-2.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                  scrollWithinWindow
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                    : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>{scrollWithinWindow ? 'Scroll' : 'Expanded'}</span>
+              </button>
+            )}
             {onToggleReadOnly && (
               <button
                 type="button"
@@ -372,8 +422,8 @@ export const RichEditor: React.FC<RichEditorProps> = ({
       )}
 
       {/* Universal Word / Google Docs / LibreOffice Formatting Ribbon */}
-      <div className="px-2.5 sm:px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between gap-2 shrink-0">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 flex-1">
+      <div className="px-2.5 sm:px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between gap-2 shrink-0 min-w-0">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
           {/* Paragraph Style Dropdown */}
           <label htmlFor={`style-select-${screenLabel || version.id}`} className="sr-only">
             Paragraph style
@@ -463,7 +513,7 @@ export const RichEditor: React.FC<RichEditorProps> = ({
           </button>
         </div>
 
-        <div className="hidden md:block text-xs text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap shrink-0 pl-2">
+        <div className="hidden lg:block text-xs text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap shrink-0 pl-2">
           v{version.versionNumber} · {version.label}
         </div>
       </div>
@@ -522,17 +572,27 @@ export const RichEditor: React.FC<RichEditorProps> = ({
       )}
 
       {/* Word-Processor Desk + Centered Paper Page */}
-      <div className="flex-1 overflow-y-auto p-2 sm:p-5 md:p-7">
+      <div
+        className={`p-2 sm:p-4 lg:p-6 ${
+          fluidHeightOnSmall
+            ? scrollWithinWindow
+              ? 'max-h-[54vh] sm:max-h-[58vh] overflow-y-auto overscroll-y-contain lg:max-h-none lg:flex-1 lg:overflow-y-auto'
+              : 'lg:flex-1 lg:overflow-y-auto'
+            : 'flex-1 min-h-[240px] max-h-[calc(100dvh-17.5rem)] md:max-h-[calc(100dvh-12rem)] lg:max-h-none overflow-y-auto overscroll-y-contain'
+        }`}
+      >
         <div
-          className={`mx-auto w-full bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-xs rounded-sm sm:rounded-md min-h-full ${
+          className={`mx-auto w-full bg-white dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-xs rounded-sm sm:rounded-md ${
+            fluidHeightOnSmall ? 'lg:min-h-full' : 'min-h-full'
+          } ${
             compact
-              ? 'max-w-[720px] px-5 py-6 sm:px-10 sm:py-10'
-              : 'max-w-[816px] px-5 py-6 sm:px-14 sm:py-12 md:px-20 md:py-14'
+              ? 'max-w-[720px] px-4 py-5 sm:px-8 sm:py-7 lg:px-10 lg:py-9'
+              : 'max-w-[816px] px-4 py-5 sm:px-12 sm:py-10 md:px-16 md:py-12'
           }`}
         >
           {/* Running Page Header (Word/Docs style) */}
-          <div className="mb-6 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 dark:text-zinc-500">
-            <div className="flex items-center gap-1.5 min-w-0">
+          <div className="mb-5 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 dark:text-zinc-500">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <label
                 htmlFor={`author-${screenLabel || 'main'}-${version.id}`}
                 className="sr-only"
@@ -546,31 +606,35 @@ export const RichEditor: React.FC<RichEditorProps> = ({
                 readOnly={readOnly}
                 onChange={(e) => onChangeAuthor(e.target.value)}
                 placeholder="Author name"
-                className="bg-transparent text-xs font-medium text-zinc-600 dark:text-zinc-300 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:text-zinc-900 dark:focus:text-zinc-100 w-44 sm:w-56"
+                className="bg-transparent text-xs font-medium text-zinc-600 dark:text-zinc-300 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:text-zinc-900 dark:focus:text-zinc-100 w-full max-w-[220px] min-w-0"
               />
             </div>
-            <span className="tabular-nums whitespace-nowrap">
+            <span className="tabular-nums whitespace-nowrap shrink-0">
               {formatDateLabel(version.updatedAt)} · v{version.versionNumber}
             </span>
           </div>
 
-          {/* Document Title & Subtitle */}
-          <div className="mb-6">
+          {/* Document Title & Subtitle (wrapping textareas so long titles never clip) */}
+          <div className="mb-5">
             <label
               htmlFor={`title-${screenLabel || 'main'}-${version.id}`}
               className="sr-only"
             >
               Document title
             </label>
-            <input
+            <textarea
+              ref={titleRef}
               id={`title-${screenLabel || 'main'}-${version.id}`}
-              type="text"
+              rows={1}
               value={version.title}
               readOnly={readOnly}
-              onChange={(e) => onChangeTitle(e.target.value)}
+              onChange={(e) => {
+                onChangeTitle(e.target.value);
+                autoResizeTextarea(e.target);
+              }}
               placeholder="Untitled Essay"
-              className={`w-full bg-transparent font-bold tracking-tight text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 focus:outline-none ${
-                compact ? 'text-xl sm:text-3xl' : 'text-2xl sm:text-4xl'
+              className={`w-full bg-transparent font-bold tracking-tight leading-tight text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 focus:outline-none resize-none overflow-hidden break-words ${
+                compact ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-2xl sm:text-3xl md:text-4xl'
               } ${font === 'serif' ? 'font-serif-prose' : 'font-sans-ui'}`}
             />
 
@@ -580,14 +644,18 @@ export const RichEditor: React.FC<RichEditorProps> = ({
             >
               Subtitle or central premise
             </label>
-            <input
+            <textarea
+              ref={subtitleRef}
               id={`subtitle-${screenLabel || 'main'}-${version.id}`}
-              type="text"
+              rows={1}
               value={version.subtitle}
               readOnly={readOnly}
-              onChange={(e) => onChangeSubtitle(e.target.value)}
+              onChange={(e) => {
+                onChangeSubtitle(e.target.value);
+                autoResizeTextarea(e.target);
+              }}
               placeholder="Add a subtitle or guiding premise..."
-              className={`mt-2 w-full bg-transparent text-sm sm:text-base text-zinc-500 dark:text-zinc-400 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none ${
+              className={`mt-2 w-full bg-transparent text-sm sm:text-base leading-snug text-zinc-500 dark:text-zinc-400 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden break-words ${
                 font === 'serif' ? 'font-serif-prose italic' : 'font-sans-ui'
               }`}
             />
@@ -614,9 +682,11 @@ export const RichEditor: React.FC<RichEditorProps> = ({
               onKeyUp={syncSelectionState}
               onMouseUp={syncSelectionState}
               onPaste={handlePaste}
-              className={`essay-prose min-h-[380px] sm:min-h-[480px] text-zinc-800 dark:text-zinc-200 ${lineHeightClass} ${
-                font === 'serif' ? 'font-serif-prose' : 'font-sans-ui'
-              }`}
+              className={`essay-prose text-zinc-800 dark:text-zinc-200 ${lineHeightClass} ${
+                fluidHeightOnSmall
+                  ? 'min-h-[200px] sm:min-h-[240px] lg:min-h-[380px]'
+                  : 'min-h-[320px] sm:min-h-[440px]'
+              } ${font === 'serif' ? 'font-serif-prose' : 'font-sans-ui'}`}
             />
           )}
         </div>

@@ -107,7 +107,7 @@ export const TrackChangesView: React.FC<TrackChangesViewProps> = ({
   const titleChanged = baseVersion.title.trim() !== targetVersion.title.trim();
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col lg:h-full gap-4">
       {/* Top Comparison Controls */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3.5 sm:px-5 flex flex-wrap items-center justify-between gap-4 shrink-0">
         <div className="flex flex-wrap items-center gap-2.5">
@@ -277,7 +277,7 @@ export const TrackChangesView: React.FC<TrackChangesViewProps> = ({
       </div>
 
       {/* Main Comparison Viewport */}
-      <div className="flex-1 min-h-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-y-auto">
+      <div className="flex-1 min-h-[320px] lg:min-h-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl lg:overflow-y-auto">
         {versions.length < 2 && baseVersion.id === targetVersion.id ? (
           <div className="h-full flex flex-col items-center justify-center p-10 text-center max-w-md mx-auto">
             <GitCompareArrows

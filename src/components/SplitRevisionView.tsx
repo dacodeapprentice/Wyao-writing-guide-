@@ -27,8 +27,6 @@ interface SplitRevisionViewProps {
   onGoToTrackChanges: () => void;
 }
 
-type MobileSplitFocus = 'stacked' | 'screen1' | 'screen2';
-
 export const SplitRevisionView: React.FC<SplitRevisionViewProps> = ({
   versions,
   activeVersion,
@@ -45,7 +43,6 @@ export const SplitRevisionView: React.FC<SplitRevisionViewProps> = ({
   const [screen1Locked, setScreen1Locked] = useState(false);
   const [screen2Locked, setScreen2Locked] = useState(false);
   const [showLiveDiff, setShowLiveDiff] = useState(false);
-  const [mobileFocus, setMobileFocus] = useState<MobileSplitFocus>('stacked');
 
   const liveDiff = useMemo(() => {
     if (!showLiveDiff) return null;
@@ -110,13 +107,10 @@ export const SplitRevisionView: React.FC<SplitRevisionViewProps> = ({
       </div>
     ) : undefined;
 
-  const showScreen1 = mobileFocus === 'stacked' || mobileFocus === 'screen1';
-  const showScreen2 = mobileFocus === 'stacked' || mobileFocus === 'screen2';
-
   return (
-    <div className="flex flex-col h-full gap-3">
+    <div className="flex flex-col lg:h-full gap-3">
       {/* Contextual Two-Screen Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 px-1">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 px-1 shrink-0">
         <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
           <span className="font-medium text-zinc-900 dark:text-zinc-100">
             Split Revision
@@ -137,39 +131,11 @@ export const SplitRevisionView: React.FC<SplitRevisionViewProps> = ({
           )}
         </div>
 
-        {/* Mobile Screen Switcher (Phone/Tablet < lg) */}
-        <div
-          role="group"
-          aria-label="Mobile screen view"
-          className="flex lg:hidden items-center gap-1 p-1 bg-zinc-200/80 dark:bg-zinc-800 rounded-lg"
-        >
-          {(
-            [
-              { id: 'stacked', label: 'Both' },
-              { id: 'screen1', label: 'Screen 1' },
-              { id: 'screen2', label: 'Screen 2' },
-            ] as const
-          ).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setMobileFocus(item.id)}
-              className={`min-h-[36px] px-2.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                mobileFocus === item.id
-                  ? 'bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 shadow-xs'
-                  : 'text-zinc-600 dark:text-zinc-400'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onOpenNewVersionModal}
-            className="h-8 inline-flex items-center gap-1.5 px-3 text-xs font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="h-9 sm:h-8 inline-flex items-center gap-1.5 px-3 text-xs font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <Plus
               className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"
@@ -181,7 +147,7 @@ export const SplitRevisionView: React.FC<SplitRevisionViewProps> = ({
           <button
             type="button"
             onClick={onGoToTrackChanges}
-            className="h-8 inline-flex items-center gap-1.5 px-3 text-xs font-medium text-blue-600 dark:text-blue-400 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:bg-blue-50 dark:hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="h-9 sm:h-8 inline-flex items-center gap-1.5 px-3 text-xs font-medium text-blue-600 dark:text-blue-400 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:bg-blue-50 dark:hover:bg-zinc-800 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
             <GitCompareArrows className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Compare Changes</span>
@@ -189,24 +155,19 @@ export const SplitRevisionView: React.FC<SplitRevisionViewProps> = ({
         </div>
       </div>
 
-      {/* Two-Screen Side-by-Side Editable Workspace */}
-      <div
-        className={`flex-1 min-h-0 grid grid-cols-1 ${
-          mobileFocus === 'stacked' ? 'lg:grid-cols-2' : 'lg:grid-cols-2'
-        } gap-4 items-stretch`}
-      >
+      {/* Two-Screen Workspace: Stacked vertically with page scroll on <lg, side-by-side on lg+ */}
+      <div className="flex flex-col gap-4 lg:flex-1 lg:min-h-0 lg:grid lg:grid-cols-2 lg:items-stretch lg:overflow-hidden">
         {/* SCREEN 1 */}
         <section
           aria-label="Screen 1 essay editor"
-          className={`${
-            showScreen1 ? 'flex' : 'hidden lg:flex'
-          } flex-col min-h-[380px] lg:h-full`}
+          className="flex flex-col min-w-0 lg:min-h-0 lg:h-full"
         >
           <RichEditor
             version={referenceVersion}
             author={author}
             font={font}
             compact
+            fluidHeightOnSmall
             screenLabel="Screen 1"
             versions={versions}
             onSelectVersion={onSelectReferenceVersion}
@@ -284,15 +245,14 @@ export const SplitRevisionView: React.FC<SplitRevisionViewProps> = ({
         {/* SCREEN 2 */}
         <section
           aria-label="Screen 2 essay editor"
-          className={`${
-            showScreen2 ? 'flex' : 'hidden lg:flex'
-          } flex-col min-h-[380px] lg:h-full`}
+          className="flex flex-col min-w-0 lg:min-h-0 lg:h-full"
         >
           <RichEditor
             version={activeVersion}
             author={author}
             font={font}
             compact
+            fluidHeightOnSmall
             screenLabel="Screen 2"
             versions={versions}
             onSelectVersion={onSelectActiveVersion}

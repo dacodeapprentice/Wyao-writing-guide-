@@ -360,7 +360,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen md:h-screen flex flex-col bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 md:overflow-hidden">
+    <div className="min-h-screen lg:h-screen flex flex-col bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 lg:overflow-hidden">
       {/* Hidden native file input for opening local .docx/.md/.txt/.html/.json */}
       <input
         ref={fileInputRef}
@@ -429,8 +429,8 @@ export default function App() {
       />
 
       {/* Main Workspace Area */}
-      <main className="flex-1 min-h-0 p-2.5 sm:p-5 pb-20 md:pb-5 flex gap-4 md:overflow-hidden">
-        <div className="flex-1 min-w-0 h-full flex flex-col">
+      <main className="flex-1 min-h-0 p-2.5 sm:p-5 pb-20 md:pb-6 lg:pb-5 flex gap-4 lg:overflow-hidden">
+        <div className="flex-1 min-w-0 lg:h-full flex flex-col">
           {mode === 'write' && (
             <RichEditor
               version={activeVersion}

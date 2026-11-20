@@ -47,7 +47,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="h-[52px] md:h-14 px-3 sm:px-6 flex items-center justify-between gap-4 md:gap-8 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 sticky top-0 z-30 md:static">
+      <header className="h-[52px] md:h-14 px-3 sm:px-6 flex items-center justify-between gap-4 md:gap-8 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 sticky top-0 z-30 lg:static">
         {/* Zone 1: Single-element Brand wordmark */}
         <a
           href="#top"
